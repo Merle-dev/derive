@@ -1,3 +1,5 @@
+use std::collections::HashMap;
+
 use ratatui::layout::Size;
 
 use crate::components::UIComponentTrait;
@@ -20,8 +22,9 @@ pub enum ComponentPosition {
     Floating,
     Main,
 }
+
 pub struct Compositor {
     components: Vec<CompositorItem>,
-    input_component: Option<usize>,
+    pub input_component_stack: Vec<usize>,
     size: Size,
 }

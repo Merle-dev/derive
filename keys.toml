@@ -1,0 +1,18 @@
+quit={mode='n', keys=['q', 'q', 'q']}
+
+insert={mode='n', keys=['i']}
+normal={mode='i', keys=['esc']}
+into_command_line={mode='n', keys=[':']}
+into_search={mode='n', keys=['/']}
+
+hover={mode='n', keys=['k']}
+jump={mode='n', keys=['space', 'space']}
+files={mode='n', keys=['space', 'f']}
+lsp_stop={mode='n', keys=['l', 's']}
+toggle_log={mode='n', keys=['l', 'l']}
+left={mode='n', keys=['left']}
+right={mode='n', keys=['right']}
+up={mode='n', keys=['up']}
+down={mode='n', keys=['down']}
+print_key_map={mode = 'n', keys=['?']}
+yank={mode = 'v', keys=['y']}

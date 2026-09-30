@@ -1,23 +1,30 @@
-use ratatui::{buffer::Buffer, layout::Rect};
+use ratatui::{
+    buffer::Buffer,
+    layout::Rect,
+    widgets::{Paragraph, Widget},
+};
 
-use crate::{Context, components::UIComponentTrait};
+use crate::{Context, components::UIComponentTrait, keys::Mode};
 
 pub struct TextBuffer {
     pub t: String,
 }
 
 impl UIComponentTrait for TextBuffer {
-    fn is_visible(&self, ctx: &mut Context) -> bool {
+    fn is_visible(&self, _ctx: &mut Context) -> bool {
         true
     }
 
+    fn captures_input(&self, _ctx: &mut Context) -> bool {
+        true
+    }
     fn kb_input(
         &mut self,
         key_event: crossterm::event::KeyEvent,
         ctx: &mut Context,
     ) -> Option<crossterm::event::KeyEvent> {
         match key_event.code {
-            crossterm::event::KeyCode::Char(c) => {
+            crossterm::event::KeyCode::Char(c) if ctx.editor.mode == Mode::Insert => {
                 self.t.push(c);
                 None
             }
@@ -36,15 +43,16 @@ impl UIComponentTrait for TextBuffer {
             }
         }
 
-        let s: usize = 9999;
+        let s: usize = 0;
         let ml = to_ciff(s + area.height as usize).len();
 
         for y in s..s + area.height as usize {
             to_ciff(y).iter().rev().enumerate().for_each(|(x, c)| {
                 buffer
-                    .cell_mut(((ml - x) as u16, (area.y as usize + y - s) as u16))
+                    .cell_mut((area.x + (ml - x) as u16, (area.y as usize + y - s) as u16))
                     .map(|cell| cell.set_char((*c + 48) as char));
             });
         }
+        Paragraph::new(self.t.clone()).render(area, buffer);
     }
 }

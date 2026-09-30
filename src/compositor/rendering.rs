@@ -10,7 +10,7 @@ impl Compositor {
     pub fn new(size: Size) -> Self {
         Self {
             components: vec![],
-            input_component: None,
+            input_component_stack: vec![],
             size,
         }
     }
