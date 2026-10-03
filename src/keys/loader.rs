@@ -1,4 +1,7 @@
-use std::{collections::HashMap, sync::Arc};
+use std::{
+    collections::{HashMap, HashSet},
+    sync::Arc,
+};
 
 use anyhow::{Context, Result, anyhow};
 use crossterm::event::{KeyCode, KeyModifiers};
@@ -25,31 +28,49 @@ impl KeyMap {
             .into_iter()
             .map(|(command, val)| {
                 let table = val.as_table().context("After command must come a Table")?;
-                Ok(ConfLine {
-                    command,
-                    mode: table
-                        .get("mode")
-                        .context("No Mode")
-                        .and_then(|m| m.as_str().context("Mode has incorrect format"))
-                        .and_then(|ms| match ms {
-                            "n" => Ok(Mode::Normal),
-                            "i" => Ok(Mode::Insert),
-                            "v" => Ok(Mode::Visual),
-                            m => Err(anyhow!("No such Mode as {m}")),
-                        })?,
-                    keys: table
-                        .get("keys")
-                        .context("No Keys")
-                        .and_then(|keys| keys.as_array().context("Keys has incorrect format"))
-                        .and_then(|keys| {
-                            keys.iter()
-                                .filter_map(|val| val.as_str())
-                                .map(Self::str_to_keys)
-                                .collect::<Result<Vec<KeyMapIdent>>>()
-                        })?,
-                })
+
+                let modes = table
+                    .get("mode")
+                    .context("No Mode")
+                    .and_then(|m| m.as_str().context("Mode has incorrect format"))?
+                    .chars()
+                    .fold(HashSet::<Mode>::new(), |mut acc, item| {
+                        match item {
+                            '*' => acc = HashSet::from([Mode::Normal, Mode::Insert, Mode::Visual]),
+                            'n' => _ = acc.insert(Mode::Normal),
+                            'i' => _ = acc.insert(Mode::Insert),
+                            'v' => _ = acc.insert(Mode::Visual),
+                            _ => (),
+                        };
+                        acc
+                    });
+                modes
+                    .into_iter()
+                    .map(|mode| {
+                        Ok(ConfLine {
+                            command: command.clone(),
+                            mode,
+                            keys: table
+                                .get("keys")
+                                .context("No Keys")
+                                .and_then(|keys| {
+                                    keys.as_array().context("Keys has incorrect format")
+                                })
+                                .and_then(|keys| {
+                                    keys.iter()
+                                        .filter_map(|val| val.as_str())
+                                        .map(Self::str_to_keys)
+                                        .collect::<Result<Vec<KeyMapIdent>>>()
+                                })?,
+                        })
+                    })
+                    .collect::<Result<Vec<ConfLine>>>()
             })
-            .collect::<Result<Vec<ConfLine>>>()?;
+            .try_fold(vec![], |mut acc, res| {
+                acc.extend(res?);
+                anyhow::Ok::<Vec<ConfLine>>(acc)
+            })?;
+
         Self::from_vecs(conf_lines)
     }
 

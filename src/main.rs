@@ -1,3 +1,5 @@
+use std::path::PathBuf;
+
 use crossterm::event::KeyEvent;
 use ratatui::{buffer::Buffer, layout::Size};
 
@@ -45,19 +47,31 @@ impl App {
 }
 
 fn main() -> anyhow::Result<()> {
+    let args = std::env::args().collect::<Vec<String>>();
+    let path = PathBuf::from(args.get(1).unwrap());
     ratatui::run(|terminal| {
         let mut app = App::new(terminal.size()?)?;
-        app.compositor.add(
-            ComponentPosition::Main,
-            buffer::TextBuffer { t: "Main".into() },
-        );
+        let doc_id = app.editor.add_doc(path)?;
+
+        app.compositor
+            .add(ComponentPosition::Main, buffer::TextBuffer::new(doc_id));
         app.compositor
             .add(ComponentPosition::TopBar, topbar::TopBar);
         app.compositor
             .add(ComponentPosition::BottomBar, bottombar::BottomBar::new());
 
         while !app.editor.quit {
-            terminal.draw(|frame| app.render(frame.buffer_mut()))?;
+            if app.editor.cursor.is_some() {
+                terminal.show_cursor()?;
+            } else {
+                terminal.hide_cursor()?;
+            }
+            terminal.draw(|frame| {
+                app.render(frame.buffer_mut());
+                if let Some(cursor) = app.editor.cursor {
+                    frame.set_cursor_position(cursor);
+                }
+            })?;
 
             match crossterm::event::read()? {
                 crossterm::event::Event::Key(key_event) => {

@@ -3,7 +3,7 @@ use std::any::Any;
 use crossterm::event::KeyEvent;
 use ratatui::{buffer::Buffer, layout::Rect};
 
-use crate::Context;
+use crate::{Context, event::CommandEvent};
 
 pub mod buffer;
 // pub mod buffer_menu;
@@ -17,6 +17,7 @@ pub trait UIComponentTrait: Any {
     fn kb_input(&mut self, key_event: KeyEvent, ctx: &mut Context) -> Option<KeyEvent> {
         Some(key_event)
     }
+    fn command_input(&mut self, command: CommandEvent, ctx: &mut Context) {}
     fn captures_input(&self, ctx: &mut Context) -> bool {
         false
     }

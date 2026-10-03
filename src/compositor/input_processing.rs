@@ -2,7 +2,7 @@ use std::collections::HashSet;
 
 use crossterm::event::KeyEvent;
 
-use crate::{Context, compositor::Compositor};
+use crate::{Context, compositor::Compositor, event::CommandEvent};
 
 impl Compositor {
     pub fn update_capture_components(&mut self, ctx: &mut Context) {
@@ -45,6 +45,16 @@ impl Compositor {
             consumer.component.kb_input(key_event, ctx)
         } else {
             Some(key_event)
+        }
+    }
+
+    pub fn process_command_event(&mut self, command: CommandEvent, ctx: &mut crate::Context) {
+        if let Some(consumer) = self
+            .input_component_stack
+            .last()
+            .and_then(|i| self.components.get_mut(*i))
+        {
+            consumer.component.command_input(command, ctx)
         }
     }
 }

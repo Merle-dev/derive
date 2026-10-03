@@ -45,7 +45,6 @@ impl App {
         }
     }
     fn process_command(&mut self, commad_event: CommandEvent) {
-        let args = commad_event.args;
         match commad_event.cmd.as_str() {
             "quit" => self.editor.quit = true,
             "normal" => self.editor.into_normal_mode(),
@@ -57,7 +56,12 @@ impl App {
             "into_command_line" => {
                 self.editor.bartask = crate::components::bottombar::BottomBarTask::Command
             }
-            _ => (),
+            _ => self.compositor.process_command_event(
+                commad_event,
+                &mut crate::Context {
+                    editor: &mut self.editor,
+                },
+            ),
         }
     }
     fn process_error(&mut self, err: anyhow::Error) {}

@@ -67,12 +67,19 @@ impl UIComponentTrait for BottomBar {
         ctx: &mut crate::Context,
     ) {
         match ctx.editor.bartask {
-            BottomBarTask::Display => Paragraph::new(match ctx.editor.mode {
-                Mode::Normal => "normal",
-                Mode::Insert => "insert",
-                Mode::Visual => "visual",
-            })
-            .render(area, buffer),
+            BottomBarTask::Display => {
+                Paragraph::new(match ctx.editor.mode {
+                    Mode::Normal => "normal",
+                    Mode::Insert => "insert",
+                    Mode::Visual => "visual",
+                })
+                .render(area, buffer);
+                if let Some(cursor) = ctx.editor.cursor {
+                    Paragraph::new(format!("{}:{}", cursor.x, cursor.y))
+                        .right_aligned()
+                        .render(area, buffer);
+                }
+            }
             BottomBarTask::Search => {
                 Paragraph::new(format!("search: {}", self.input)).render(area, buffer)
             }
