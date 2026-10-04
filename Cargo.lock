@@ -266,6 +266,7 @@ dependencies = [
  "anyhow",
  "crossterm",
  "hecs",
+ "kanal",
  "lsp-types",
  "ratatui",
  "ropey",
@@ -564,6 +565,16 @@ dependencies = [
  "cfg-if",
  "futures-util",
  "wasm-bindgen",
+]
+
+[[package]]
+name = "kanal"
+version = "0.1.1"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "9e3953adf0cd667798b396c2fa13552d6d9b3269d7dd1154c4c416442d1ff574"
+dependencies = [
+ "futures-core",
+ "lock_api",
 ]
 
 [[package]]

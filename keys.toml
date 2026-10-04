@@ -1,5 +1,3 @@
-quit={mode='n', keys=['q', 'q', 'q']}
-
 insert={mode='n', keys=['i']}
 visual={mode='n', keys=['v']}
 normal={mode='vi', keys=['esc']}

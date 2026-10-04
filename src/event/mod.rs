@@ -31,6 +31,7 @@ pub struct CommandEvent {
 }
 
 pub enum Event {
+    Terminal(crossterm::event::Event),
     Command(CommandEvent),
     Error(anyhow::Error),
     Lsp,
@@ -39,14 +40,28 @@ pub enum Event {
 impl App {
     pub fn process_event(&mut self, event: Event) {
         match event {
-            Event::Lsp => self.process_lsp(),
+            Event::Terminal(ev) => self.process_terminal_event(ev),
             Event::Command(cmd) => self.process_command(cmd),
             Event::Error(err) => self.process_error(err),
+            Event::Lsp => self.process_lsp(),
+        }
+    }
+    fn process_terminal_event(&mut self, terminal_event: crossterm::event::Event) {
+        match terminal_event {
+            crossterm::event::Event::Key(key_event) => {
+                if let Some(cmd_event) = self
+                    .process_key_event(key_event)
+                    .and_then(|key_event| self.editor.key_map.process(key_event))
+                {
+                    self.process_event(Event::Command(cmd_event));
+                }
+            }
+            _ => (),
         }
     }
     fn process_command(&mut self, commad_event: CommandEvent) {
         match commad_event.cmd.as_str() {
-            "quit" => self.editor.quit = true,
+            "quit" | "q" => self.editor.quit = true,
             "normal" => self.editor.into_normal_mode(),
             "insert" => self.editor.into_insert_mode(),
             "visual" => self.editor.into_visual_mode(),
@@ -60,6 +75,7 @@ impl App {
                 commad_event,
                 &mut crate::Context {
                     editor: &mut self.editor,
+                    sender: &mut self.sender,
                 },
             ),
         }

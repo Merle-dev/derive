@@ -16,7 +16,7 @@ pub struct TextBuffer {
     pub clamp_x: u16,
     pub scroll: usize,
     pub id: DocumentId,
-    pub last_pos: Mutex<Option<Position>>,
+    pub last_pos: Mutex<Option<Rect>>,
 }
 
 impl TextBuffer {
@@ -33,16 +33,18 @@ impl TextBuffer {
         let id = self.id.clone();
         ctx.editor.buffers.get_mut(&id).map(|doc| &mut doc.rope)
     }
-    pub fn update_last_pos(&self, x: u16, y: u16) {
+    pub fn update_last_pos(&self, rect: Rect) {
         let mut last_pos = self.last_pos.lock().unwrap();
-        *last_pos = Some(Position { x, y });
+        *last_pos = Some(rect);
     }
 
     pub fn update_cursor<'a, 'b>(&'a self, ctx: &'b mut Context) {
-        if let Some(last_pos) = *self.last_pos.lock().unwrap() {
+        if let Some(last_rect) = *self.last_pos.lock().unwrap() {
             ctx.editor.cursor = Some(Position {
-                x: self.clamp_x + last_pos.x,
-                y: self.cursor.y + last_pos.y,
+                x: (self.clamp_x + last_rect.x)
+                    .min(last_rect.x + last_rect.width.saturating_sub(1)),
+                y: (self.cursor.y + last_rect.y)
+                    .min(last_rect.y + last_rect.height.saturating_sub(1)),
             });
         }
     }
@@ -51,8 +53,12 @@ impl TextBuffer {
         self.clamp_x = self.cursor.x.min(
             rope.get_line(self.cursor.y as usize)
                 .context("No such line in rope")?
-                .len_chars() as u16
-                - 1,
+                .len_chars()
+                .saturating_sub(if rope.len_lines() == self.cursor.y as usize + 1 {
+                    0
+                } else {
+                    1
+                }) as u16,
         );
         Ok(())
     }
@@ -62,16 +68,27 @@ impl TextBuffer {
         self.update_clamp_x(rope)
     }
     pub fn cursor_down(&mut self, rope: &Rope) -> anyhow::Result<()> {
-        self.cursor.y = self.cursor.y.saturating_add(1);
+        self.cursor.y = self
+            .cursor
+            .y
+            .saturating_add(1)
+            .min(rope.len_lines() as u16 - 1);
+
         self.update_clamp_x(rope)
     }
     pub fn cursor_left(&mut self, rope: &Rope) -> anyhow::Result<()> {
-        self.cursor.x = self.cursor.x.saturating_sub(1);
+        if self.cursor.x > self.clamp_x {
+            self.cursor.x = self.clamp_x.saturating_sub(1);
+        } else {
+            self.cursor.x = self.cursor.x.saturating_sub(1);
+        }
         self.update_clamp_x(rope)
     }
     pub fn cursor_right(&mut self, rope: &Rope) -> anyhow::Result<()> {
         self.cursor.x = self.cursor.x.saturating_add(1);
-        self.update_clamp_x(rope)
+        self.update_clamp_x(rope)?;
+        self.cursor.x = self.clamp_x;
+        Ok(())
     }
 
     pub fn get_index(&self, rope: &Rope) -> usize {
@@ -193,12 +210,15 @@ impl UIComponentTrait for TextBuffer {
                     " {line_num_spacing}{line_num}   {}",
                     line.to_string()
                 ))
-            } else {
-                Paragraph::new(format!(" {line_num_spacing}{line_num}"))
+                .render(area, buffer);
+                // } else {
+                // Paragraph::new(format!(" {line_num_spacing}{line_num}"))
             }
-            .render(area, buffer);
         }
-        self.update_last_pos(area.x + 6, area.y);
+        self.update_last_pos(Rect {
+            x: area.x + 6,
+            ..area
+        });
         self.update_cursor(ctx);
     }
 }

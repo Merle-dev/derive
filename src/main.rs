@@ -7,6 +7,7 @@ use crate::{
     components::{bottombar, buffer, topbar},
     compositor::{ComponentPosition, Compositor},
     editor::Editor,
+    event::Event,
 };
 
 mod components;
@@ -17,32 +18,56 @@ mod keys;
 
 struct Context<'e> {
     editor: &'e mut Editor,
+    sender: &'e mut kanal::Sender<Event>,
 }
 
 struct App {
     compositor: Compositor,
+    sender: kanal::Sender<Event>,
+    receiver: kanal::Receiver<Event>,
     editor: Editor,
 }
 
 impl App {
     pub fn new(size: Size) -> anyhow::Result<Self> {
+        let (sender, receiver) = kanal::bounded(16);
+        let key_sender = sender.clone();
+        std::thread::spawn(move || {
+            loop {
+                key_sender
+                    .send(Event::Terminal(crossterm::event::read().unwrap()))
+                    .unwrap();
+            }
+        });
         Ok(Self {
             compositor: Compositor::new(size),
             editor: Editor::new()?,
+            receiver,
+            sender,
         })
     }
 
     pub fn render(&mut self, buffer: &mut Buffer) {
-        let App { compositor, editor } = self;
-        compositor.calculate_visibility(&mut Context { editor });
-        compositor.render(buffer, &mut Context { editor });
-        compositor.update_capture_components(&mut Context { editor });
+        let App {
+            compositor,
+            editor,
+            sender,
+            ..
+        } = self;
+        compositor.calculate_visibility(&mut Context { editor, sender });
+        compositor.render(buffer, &mut Context { editor, sender });
+        compositor.update_capture_components(&mut Context { editor, sender });
     }
 
     pub fn process_key_event(&mut self, key_event: KeyEvent) -> Option<KeyEvent> {
-        let App { compositor, editor } = self;
+        let App {
+            compositor,
+            editor,
+            sender,
+            ..
+        } = self;
 
-        compositor.process_key_event(key_event, &mut Context { editor })
+        compositor.process_key_event(key_event, &mut Context { editor, sender })
     }
 }
 
@@ -73,17 +98,7 @@ fn main() -> anyhow::Result<()> {
                 }
             })?;
 
-            match crossterm::event::read()? {
-                crossterm::event::Event::Key(key_event) => {
-                    if let Some(cmd_event) = app
-                        .process_key_event(key_event)
-                        .and_then(|key_event| app.editor.key_map.process(key_event))
-                    {
-                        app.process_event(event::Event::Command(cmd_event));
-                    }
-                }
-                _ => (),
-            }
+            app.process_event(app.receiver.recv()?);
         }
         anyhow::Ok(())
     })?;

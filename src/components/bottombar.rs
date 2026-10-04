@@ -1,7 +1,11 @@
 use crossterm::event::KeyCode;
 use ratatui::widgets::{Paragraph, Widget};
 
-use crate::{components::UIComponentTrait, keys::Mode};
+use crate::{
+    components::UIComponentTrait,
+    event::{CommandEvent, Event, StringOrNums},
+    keys::Mode,
+};
 
 #[derive(PartialEq)]
 pub enum BottomBarTask {
@@ -48,6 +52,23 @@ impl UIComponentTrait for BottomBar {
                 }
                 KeyCode::Enter => {
                     ctx.editor.bartask = BottomBarTask::Display;
+                    let (cmd, args) = self
+                        .input
+                        .clone()
+                        .split_once(" ")
+                        .map(|(cmd, args)| {
+                            (cmd.to_string(), StringOrNums::String(args.to_string()))
+                        })
+                        .unwrap_or_else(|| (self.input.clone(), StringOrNums::Nums(vec![])));
+                    ctx.sender
+                        .send(Event::Command(CommandEvent { cmd, args }))
+                        .unwrap();
+                    self.input.clear();
+                    None
+                }
+                KeyCode::Esc => {
+                    ctx.editor.bartask = BottomBarTask::Display;
+                    self.input.clear();
                     None
                 }
                 _ => Some(key_event),
