@@ -1,7 +1,10 @@
 use std::path::PathBuf;
 
 use crossterm::event::KeyEvent;
-use ratatui::{buffer::Buffer, layout::Size};
+use ratatui::{
+    buffer::Buffer,
+    layout::{Position, Size},
+};
 
 use crate::{
     components::{bottombar, buffer, topbar},
@@ -15,6 +18,7 @@ mod compositor;
 mod editor;
 mod event;
 mod keys;
+mod lsp_server;
 
 struct Context<'e> {
     editor: &'e mut Editor,
@@ -71,6 +75,7 @@ impl App {
     }
 }
 
+// Comment made by Derive
 fn main() -> anyhow::Result<()> {
     let args = std::env::args().collect::<Vec<String>>();
     let path = PathBuf::from(args.get(1).unwrap());
@@ -93,8 +98,11 @@ fn main() -> anyhow::Result<()> {
             }
             terminal.draw(|frame| {
                 app.render(frame.buffer_mut());
-                if let Some(cursor) = app.editor.cursor {
-                    frame.set_cursor_position(cursor);
+                if let Some((cursor, rect)) = app.editor.cursor {
+                    frame.set_cursor_position(Position {
+                        x: cursor.x + rect.x,
+                        y: cursor.y + rect.y,
+                    });
                 }
             })?;
 

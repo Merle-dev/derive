@@ -5,7 +5,7 @@ use std::{
     path::PathBuf,
 };
 
-use ratatui::layout::Position;
+use ratatui::layout::{Position, Rect};
 use ropey::Rope;
 
 use crate::{
@@ -24,7 +24,7 @@ pub struct Editor {
     pub buffers: BTreeMap<DocumentId, Document>,
     pub key_map: KeyMap,
     pub bartask: BottomBarTask,
-    pub cursor: Option<Position>,
+    pub cursor: Option<(Position, Rect)>,
     pub mode: Mode,
     pub quit: bool,
 }
@@ -53,5 +53,11 @@ impl Editor {
             },
         );
         Ok(id)
+    }
+    pub fn write(&mut self) -> anyhow::Result<()> {
+        for (_, doc) in self.buffers.iter() {
+            doc.write()?;
+        }
+        Ok(())
     }
 }

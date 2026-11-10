@@ -24,10 +24,10 @@ impl Compositor {
         self.input_component_stack = input_component_stack;
     }
 
-    pub fn add_input(&mut self, index: usize) {
+    pub fn _add_input(&mut self, index: usize) {
         self.input_component_stack.push(index);
     }
-    pub fn remove(&mut self, index: usize) {
+    pub fn _remove(&mut self, index: usize) {
         if index < self.components.len() {
             self.components.remove(index);
         }

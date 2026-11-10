@@ -95,7 +95,8 @@ impl UIComponentTrait for BottomBar {
                     Mode::Visual => "visual",
                 })
                 .render(area, buffer);
-                if let Some(cursor) = ctx.editor.cursor {
+
+                if let Some((cursor, _)) = ctx.editor.cursor {
                     Paragraph::new(format!("{}:{}", cursor.x, cursor.y))
                         .right_aligned()
                         .render(area, buffer);

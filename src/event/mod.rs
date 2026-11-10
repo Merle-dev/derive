@@ -62,6 +62,12 @@ impl App {
     fn process_command(&mut self, commad_event: CommandEvent) {
         match commad_event.cmd.as_str() {
             "quit" | "q" => self.editor.quit = true,
+            "write" | "w" => self.editor.write().unwrap(),
+            "wq" => {
+                if self.editor.write().is_ok() {
+                    self.editor.quit = true;
+                }
+            }
             "normal" => self.editor.into_normal_mode(),
             "insert" => self.editor.into_insert_mode(),
             "visual" => self.editor.into_visual_mode(),

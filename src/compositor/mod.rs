@@ -1,5 +1,3 @@
-use std::collections::HashMap;
-
 use ratatui::layout::Size;
 
 use crate::components::UIComponentTrait;

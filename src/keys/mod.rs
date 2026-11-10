@@ -84,34 +84,6 @@ impl KeyMap {
         None
     }
 
-    fn pm(map: Arc<HashMap<KeyMapIdent, KeyMapMember>>) -> String {
-        [
-            "{".to_string(),
-            map.iter()
-                .map(|(i, m)| {
-                    format!(
-                        "{}: {}",
-                        match i {
-                            KeyMapIdent::AnyNum => "*".to_string(),
-                            KeyMapIdent::Key(k) => k.code.to_string(),
-                        },
-                        match m {
-                            KeyMapMember::Map(map) => Self::pm(map.clone()),
-                            KeyMapMember::Value(v) => format!("{v:?}"),
-                        }
-                    )
-                })
-                .collect::<Vec<String>>()
-                .join(" | "),
-            "}".to_string(),
-        ]
-        .concat()
-    }
-
-    pub fn simple_current_map(&self) -> String {
-        Self::pm(self.current_map.clone())
-    }
-
     pub fn set_mode(&mut self, mode: Mode) {
         if let Some(map) = self.modes.get(&mode) {
             self.current_default = mode;
