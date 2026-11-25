@@ -18,7 +18,7 @@ mod compositor;
 mod editor;
 mod event;
 mod keys;
-mod lsp_server;
+// mod lsp_server;
 
 struct Context<'e> {
     editor: &'e mut Editor,
@@ -38,6 +38,8 @@ impl App {
     pub fn new(size: Size) -> anyhow::Result<Self> {
         let (sender, receiver) = kanal::bounded(16);
         let key_sender = sender.clone();
+        let lsp_sender = sender.clone();
+
         std::thread::spawn(move || {
             loop {
                 key_sender
@@ -45,6 +47,7 @@ impl App {
                     .unwrap();
             }
         });
+
         Ok(Self {
             compositor: Compositor::new(size),
             editor: Editor::new()?,

@@ -6,22 +6,29 @@ use std::{
 
 use anyhow::Context;
 
+mod commands;
+mod initialize;
+
 use crate::event::Event;
 
-enum EditorRequest {}
+pub enum EditorRequest {}
 
 pub fn spawn_server(
     command: String,
     app_sender: kanal::Sender<Event>,
 ) -> kanal::Sender<EditorRequest> {
-    todo!()
+    let (sender, receiver) = kanal::unbounded::<EditorRequest>();
+    std::thread::spawn(move || {
+        let lsp_server = LspServer::new(command, app_sender).unwrap();
+    });
+    sender
 }
 
 struct LspServer {
     writer: BufWriter<ChildStdin>,
     app_sender: kanal::Sender<Event>,
     pending: HashMap<u64, &'static str>,
-    next_id: u64,
+    next_id: u32,
     ready: bool,
 }
 
@@ -46,6 +53,13 @@ impl LspServer {
             }
         });
 
+        std::thread::spawn(move || {
+            loop {
+                let mut buf = vec![];
+                reader.read(&buf);
+            }
+        });
+
         Ok(Self {
             app_sender,
             writer,
@@ -53,5 +67,10 @@ impl LspServer {
             next_id: 0,
             ready: false,
         })
+    }
+
+    pub fn next_id(&mut self) -> u32 {
+        self.next_id += 1;
+        self.next_id - 1
     }
 }
