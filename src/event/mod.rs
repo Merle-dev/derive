@@ -77,16 +77,22 @@ impl App {
             "into_command_line" => {
                 self.editor.bartask = crate::components::bottombar::BottomBarTask::Command
             }
+            "toggle_log" => self.editor.logview = !self.editor.logview,
             _ => self.compositor.process_command_event(
                 commad_event,
                 &mut crate::Context {
                     editor: &mut self.editor,
                     sender: &mut self.sender,
+                    log: &self.log,
                 },
             ),
         }
     }
-    fn process_error(&mut self, err: anyhow::Error) {}
+    fn process_error(&mut self, err: anyhow::Error) {
+        format!("{:#?}", err)
+            .lines()
+            .for_each(|l| self.log.push(l.to_string()));
+    }
     fn process_lsp(&mut self) {}
 }
 

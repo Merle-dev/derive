@@ -1,0 +1,34 @@
+use ratatui::widgets::{List, ListItem, Widget};
+
+use crate::components::UIComponentTrait;
+
+pub struct LogView;
+
+impl UIComponentTrait for LogView {
+    fn is_visible(&self, ctx: &mut crate::Context) -> bool {
+        ctx.editor.logview
+    }
+
+    fn render(
+        &self,
+        area: ratatui::prelude::Rect,
+        buffer: &mut ratatui::prelude::Buffer,
+        ctx: &mut crate::Context,
+    ) {
+        ctx.editor.cursor = None;
+        List::new(
+            ctx.log
+                .clone()
+                .into_iter()
+                .map(ListItem::from)
+                .collect::<Vec<ListItem>>(),
+        )
+        .render(area, buffer);
+    }
+    fn captures_input(&self, _ctx: &mut crate::Context) -> bool {
+        true
+    }
+    fn redraw(&self, _ctx: &mut crate::Context) -> bool {
+        true
+    }
+}

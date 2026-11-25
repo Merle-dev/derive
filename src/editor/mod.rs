@@ -27,6 +27,7 @@ pub struct Editor {
     pub cursor: Option<(Position, Rect)>,
     pub mode: Mode,
     pub quit: bool,
+    pub logview: bool,
 }
 
 impl Editor {
@@ -41,6 +42,7 @@ impl Editor {
             mode: Mode::Normal,
             cursor: None,
             quit: false,
+            logview: false,
         })
     }
     pub fn add_doc(&mut self, path: PathBuf) -> anyhow::Result<DocumentId> {

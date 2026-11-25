@@ -8,6 +8,7 @@ use crate::{Context, event::CommandEvent};
 pub mod buffer;
 // pub mod buffer_menu;
 pub mod bottombar;
+pub mod logview;
 pub mod topbar;
 
 pub trait UIComponentTrait: Any {

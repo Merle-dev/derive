@@ -7,7 +7,7 @@ use ratatui::{
 };
 
 use crate::{
-    components::{bottombar, buffer, topbar},
+    components::{bottombar, buffer, logview::LogView, topbar},
     compositor::{ComponentPosition, Compositor},
     editor::Editor,
     event::Event,
@@ -23,6 +23,7 @@ mod lsp_server;
 struct Context<'e> {
     editor: &'e mut Editor,
     sender: &'e mut kanal::Sender<Event>,
+    log: &'e Vec<String>,
 }
 
 struct App {
@@ -30,6 +31,7 @@ struct App {
     sender: kanal::Sender<Event>,
     receiver: kanal::Receiver<Event>,
     editor: Editor,
+    log: Vec<String>,
 }
 
 impl App {
@@ -48,6 +50,7 @@ impl App {
             editor: Editor::new()?,
             receiver,
             sender,
+            log: vec![],
         })
     }
 
@@ -56,11 +59,27 @@ impl App {
             compositor,
             editor,
             sender,
+            log,
             ..
         } = self;
-        compositor.calculate_visibility(&mut Context { editor, sender });
-        compositor.render(buffer, &mut Context { editor, sender });
-        compositor.update_capture_components(&mut Context { editor, sender });
+        compositor.calculate_visibility(&mut Context {
+            editor,
+            sender,
+            log,
+        });
+        compositor.render(
+            buffer,
+            &mut Context {
+                editor,
+                sender,
+                log,
+            },
+        );
+        compositor.update_capture_components(&mut Context {
+            editor,
+            sender,
+            log,
+        });
     }
 
     pub fn process_key_event(&mut self, key_event: KeyEvent) -> Option<KeyEvent> {
@@ -68,10 +87,18 @@ impl App {
             compositor,
             editor,
             sender,
+            log,
             ..
         } = self;
 
-        compositor.process_key_event(key_event, &mut Context { editor, sender })
+        compositor.process_key_event(
+            key_event,
+            &mut Context {
+                editor,
+                sender,
+                log,
+            },
+        )
     }
 }
 
@@ -89,6 +116,8 @@ fn main() -> anyhow::Result<()> {
             .add(ComponentPosition::TopBar, topbar::TopBar);
         app.compositor
             .add(ComponentPosition::BottomBar, bottombar::BottomBar::new());
+
+        app.compositor.add(ComponentPosition::Main, LogView);
 
         while !app.editor.quit {
             if app.editor.cursor.is_some() {

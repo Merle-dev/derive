@@ -74,12 +74,12 @@ impl TextBuffer {
 }
 
 impl UIComponentTrait for TextBuffer {
-    fn is_visible(&self, _ctx: &mut Context) -> bool {
-        true
+    fn is_visible(&self, ctx: &mut Context) -> bool {
+        !ctx.editor.logview
     }
 
-    fn captures_input(&self, _ctx: &mut Context) -> bool {
-        true
+    fn captures_input(&self, ctx: &mut Context) -> bool {
+        !ctx.editor.logview
     }
     fn kb_input(
         &mut self,
