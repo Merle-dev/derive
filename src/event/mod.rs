@@ -1,4 +1,4 @@
-use crate::App;
+use crate::{App, lsp_server::spawn_server};
 
 pub enum StringOrNums {
     String(String),
@@ -78,6 +78,9 @@ impl App {
                 self.editor.bartask = crate::components::bottombar::BottomBarTask::Command
             }
             "toggle_log" => self.editor.logview = !self.editor.logview,
+            "spawn_lsp" => {
+                let _ = spawn_server("rust-analyzer".to_string(), self.sender.clone()).unwrap();
+            }
             _ => self.compositor.process_command_event(
                 commad_event,
                 &mut crate::Context {

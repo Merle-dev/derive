@@ -123,7 +123,7 @@ fn main() -> anyhow::Result<()> {
 
         app.compositor.add(ComponentPosition::Main, LogView);
 
-        spawn_server("analyzer".to_string(), app.sender.clone());
+        // spawn_server("rust-analyzer".to_string(), app.sender.clone()).unwrap();
 
         while !app.editor.quit {
             if app.editor.cursor.is_some() {

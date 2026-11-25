@@ -17,9 +17,9 @@ impl UIComponentTrait for LogView {
     ) {
         ctx.editor.cursor = None;
         List::new(
-            ctx.log
-                .clone()
-                .into_iter()
+            ctx.log[ctx.log.len() - (area.height as usize)..]
+                .iter()
+                .cloned()
                 .map(ListItem::from)
                 .collect::<Vec<ListItem>>(),
         )

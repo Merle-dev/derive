@@ -6,7 +6,7 @@ use serde_json::Value;
 use crate::lsp_server::LspServer;
 
 #[derive(Serialize)]
-enum Command {
+pub enum LspCommand {
     Request {
         jsonrpc: String,
         id: u32,
@@ -17,7 +17,7 @@ enum Command {
 }
 
 impl LspServer {
-    fn send(&mut self, command: Command) -> anyhow::Result<()> {
+    fn send(&mut self, command: LspCommand) -> anyhow::Result<()> {
         let str = serde_json::to_string(&command)?;
         self.writer.write(str.as_bytes())?;
         self.writer.flush()?;

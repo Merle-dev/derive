@@ -12,14 +12,33 @@ mod initialize;
 
 use crate::event::Event;
 
-pub enum EditorRequest {}
+pub enum EditorRequest {
+    Init,
+}
 
 pub fn spawn_server(
     command: String,
     app_sender: kanal::Sender<Event>,
 ) -> anyhow::Result<kanal::Sender<EditorRequest>> {
     let (mut lsp_server, lsp_sender) = LspServer::new(command, app_sender)?;
-    std::thread::spawn(move || while let Some(editor_req) = lsp_server.recv() {});
+
+    fn inner(lsp_server: &mut LspServer) -> anyhow::Result<()> {
+        loop {
+            let editor_req = lsp_server.lsp_recv.recv()?;
+            lsp_server.process_editor_req(editor_req)?;
+        }
+    }
+
+    std::thread::spawn(move || match inner(&mut lsp_server) {
+        Ok(_) => (),
+        Err(err) => {
+            // Can be ignored when already erroring on sending errors, sending the error is useless.
+            let _ = lsp_server
+                .app_sender
+                .send(Event::Error(anyhow!("LSP Error: {}", err)));
+        }
+    });
+    lsp_sender.send(EditorRequest::Init)?;
     Ok(lsp_sender)
 }
 
@@ -71,21 +90,14 @@ impl LspServer {
             lsp_sender,
         ))
     }
-    fn recv(&mut self) -> Option<EditorRequest> {
-        match self.lsp_recv.recv() {
-            Ok(er) => Some(er),
-            Err(err) => {
-                // Can be ignored when already erroring on sending errors, sending the error is useless.
-                let _ = self
-                    .app_sender
-                    .send(Event::Error(anyhow!("LSP Error: {}", err)));
-                None
-            }
-        }
-    }
-
     pub fn next_id(&mut self) -> u32 {
         self.next_id += 1;
         self.next_id - 1
+    }
+
+    fn process_editor_req(&mut self, editor_req: EditorRequest) -> anyhow::Result<()> {
+        match editor_req {
+            EditorRequest::Init => self.initialize(),
+        }
     }
 }
