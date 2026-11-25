@@ -11,6 +11,7 @@ use crate::{
     compositor::{ComponentPosition, Compositor},
     editor::Editor,
     event::Event,
+    lsp_server::spawn_server,
 };
 
 mod components;
@@ -18,7 +19,7 @@ mod compositor;
 mod editor;
 mod event;
 mod keys;
-// mod lsp_server;
+mod lsp_server;
 
 struct Context<'e> {
     editor: &'e mut Editor,
@@ -121,6 +122,8 @@ fn main() -> anyhow::Result<()> {
             .add(ComponentPosition::BottomBar, bottombar::BottomBar::new());
 
         app.compositor.add(ComponentPosition::Main, LogView);
+
+        spawn_server("analyzer".to_string(), app.sender.clone());
 
         while !app.editor.quit {
             if app.editor.cursor.is_some() {
