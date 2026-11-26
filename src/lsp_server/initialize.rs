@@ -1,6 +1,3 @@
-use std::io::Write;
-
-use anyhow::anyhow;
 use lsp_types::{
     ClientCapabilities, ClientInfo, CompletionClientCapabilities, CompletionItemCapability,
     InitializeParams, TextDocumentClientCapabilities, TextDocumentSyncClientCapabilities,
@@ -18,13 +15,12 @@ impl LspServer {
             method: "initialize".to_string(),
             params: self.initialize_params()?,
         };
-        let buf = serde_json::to_string(&command)?;
 
         self.app_sender
-            .send(crate::event::Event::Error(anyhow!("INFO {}", buf)))?;
+            .send(crate::event::Event::Info(serde_json::to_string(&command)?))
+            .unwrap();
 
-        self.writer.write_all(&buf.into_bytes())?;
-        self.writer.flush()?;
+        self.send(command)?;
         Ok(())
     }
     fn initialize_params(&mut self) -> anyhow::Result<Value> {

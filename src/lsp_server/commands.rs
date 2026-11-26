@@ -17,9 +17,10 @@ pub enum LspCommand {
 }
 
 impl LspServer {
-    fn send(&mut self, command: LspCommand) -> anyhow::Result<()> {
+    pub fn send(&mut self, command: LspCommand) -> anyhow::Result<()> {
         let str = serde_json::to_string(&command)?;
-        self.writer.write(str.as_bytes())?;
+        write!(self.writer, "Content-Length: {}\r\n\r\n", str.len())?;
+        self.writer.write_all(str.as_bytes())?;
         self.writer.flush()?;
         Ok(())
     }

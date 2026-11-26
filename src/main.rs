@@ -39,7 +39,6 @@ impl App {
     pub fn new(size: Size) -> anyhow::Result<Self> {
         let (sender, receiver) = kanal::bounded(16);
         let key_sender = sender.clone();
-        let lsp_sender = sender.clone();
 
         std::thread::spawn(move || {
             loop {
@@ -54,7 +53,7 @@ impl App {
             editor: Editor::new()?,
             receiver,
             sender,
-            log: vec![],
+            log: vec!["LOG".into()],
         })
     }
 
@@ -122,8 +121,6 @@ fn main() -> anyhow::Result<()> {
             .add(ComponentPosition::BottomBar, bottombar::BottomBar::new());
 
         app.compositor.add(ComponentPosition::Main, LogView);
-
-        // spawn_server("rust-analyzer".to_string(), app.sender.clone()).unwrap();
 
         while !app.editor.quit {
             if app.editor.cursor.is_some() {

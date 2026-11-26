@@ -5,6 +5,7 @@ use std::{
     path::PathBuf,
 };
 
+use kanal::Sender;
 use ratatui::layout::{Position, Rect};
 use ropey::Rope;
 
@@ -12,6 +13,7 @@ use crate::{
     components::bottombar::BottomBarTask,
     editor::document::Document,
     keys::{KeyMap, Mode},
+    lsp_server::EditorRequest,
 };
 
 mod document;
@@ -20,8 +22,14 @@ mod mode;
 #[derive(PartialEq, PartialOrd, Eq, Ord, Clone, Copy)]
 pub struct DocumentId(usize);
 
+pub struct LspConnection {
+    pub name: String,
+    pub sender: Sender<EditorRequest>,
+}
+
 pub struct Editor {
     pub buffers: BTreeMap<DocumentId, Document>,
+    pub lsp_connections: Vec<LspConnection>,
     pub key_map: KeyMap,
     pub bartask: BottomBarTask,
     pub cursor: Option<(Position, Rect)>,
@@ -37,6 +45,7 @@ impl Editor {
         file.read_to_string(&mut text)?;
         Ok(Self {
             buffers: BTreeMap::new(),
+            lsp_connections: vec![],
             key_map: KeyMap::load(text)?,
             bartask: BottomBarTask::Display,
             mode: Mode::Normal,

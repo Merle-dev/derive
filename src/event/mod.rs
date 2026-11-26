@@ -1,4 +1,4 @@
-use crate::{App, lsp_server::spawn_server};
+use crate::{App, editor::LspConnection, lsp_server::spawn_server};
 
 pub enum StringOrNums {
     String(String),
@@ -34,7 +34,8 @@ pub enum Event {
     Terminal(crossterm::event::Event),
     Command(CommandEvent),
     Error(anyhow::Error),
-    Lsp,
+    Info(String),
+    Lsp(String),
 }
 
 impl App {
@@ -43,7 +44,10 @@ impl App {
             Event::Terminal(ev) => self.process_terminal_event(ev),
             Event::Command(cmd) => self.process_command(cmd),
             Event::Error(err) => self.process_error(err),
-            Event::Lsp => self.process_lsp(),
+            Event::Lsp(str) => self.process_lsp(str),
+            Event::Info(info) => {
+                self.log.push(info);
+            }
         }
     }
     fn process_terminal_event(&mut self, terminal_event: crossterm::event::Event) {
@@ -79,7 +83,12 @@ impl App {
             }
             "toggle_log" => self.editor.logview = !self.editor.logview,
             "spawn_lsp" => {
-                let _ = spawn_server("rust-analyzer".to_string(), self.sender.clone()).unwrap();
+                let name = "rust-analyzer".to_string();
+                let sender = spawn_server(name.clone(), self.sender.clone()).unwrap();
+                sender.send(crate::lsp_server::EditorRequest::Init).unwrap();
+                self.editor
+                    .lsp_connections
+                    .push(LspConnection { name, sender });
             }
             _ => self.compositor.process_command_event(
                 commad_event,
@@ -92,11 +101,15 @@ impl App {
         }
     }
     fn process_error(&mut self, err: anyhow::Error) {
-        format!("{:#?}", err)
+        format!("ERROR: {:#?}", err)
             .lines()
             .for_each(|l| self.log.push(l.to_string()));
     }
-    fn process_lsp(&mut self) {}
+    fn process_lsp(&mut self, str: String) {
+        format!("LSP: {:#?}", str)
+            .lines()
+            .for_each(|l| self.log.push(l.to_string()));
+    }
 }
 
 fn merge_nums(nums: Vec<u8>) -> usize {

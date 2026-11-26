@@ -17,7 +17,7 @@ impl UIComponentTrait for LogView {
     ) {
         ctx.editor.cursor = None;
         List::new(
-            ctx.log[ctx.log.len() - (area.height as usize)..]
+            ctx.log[ctx.log.len().saturating_sub(area.height as usize)..]
                 .iter()
                 .cloned()
                 .map(ListItem::from)
@@ -25,10 +25,10 @@ impl UIComponentTrait for LogView {
         )
         .render(area, buffer);
     }
-    fn captures_input(&self, _ctx: &mut crate::Context) -> bool {
-        true
+    fn captures_input(&self, ctx: &mut crate::Context) -> bool {
+        ctx.editor.logview
     }
-    fn redraw(&self, _ctx: &mut crate::Context) -> bool {
-        true
+    fn redraw(&self, ctx: &mut crate::Context) -> bool {
+        ctx.editor.logview
     }
 }
